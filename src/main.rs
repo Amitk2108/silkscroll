@@ -17,6 +17,7 @@ mod easing;
 mod engine;
 mod icon;
 mod instance;
+mod presets;
 mod settings;
 mod target;
 mod tray;

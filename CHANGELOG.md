@@ -6,6 +6,16 @@ All notable changes to SilkScroll are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-17
+
+### Added
+
+- **Presets:** a *Preset* drop-down in the settings window with five ready-made scroll styles: Default, Extra
+  smooth, Responsive, Precise and Fast scroll. Choosing one fills in the five values; editing a value shows
+  *Custom*. Works for the default profile and for each app.
+- *Preset (all apps)* submenu in the tray menu for quick switching.
+- The Help dialog lists the presets and what each one feels like.
+
 ## [0.3.0] - 2026-10-17
 
 ### Added

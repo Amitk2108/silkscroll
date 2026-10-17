@@ -20,6 +20,7 @@ Free and open source (MIT). One small `.exe`, no installer, no runtime, no telem
 - [Features](#features)
 - [Install](#install)
 - [Using SilkScroll](#using-silkscroll)
+- [Presets](#presets)
 - [Settings reference](#settings-reference)
 - [How it works](#how-it-works)
 - [Configuration file](#configuration-file)
@@ -34,6 +35,7 @@ Free and open source (MIT). One small `.exe`, no installer, no runtime, no telem
 
 - **Smooth, eased scrolling** for vertical and horizontal wheels, animated at your display's refresh rate.
 - **Acceleration:** spin the wheel quickly to cover long pages faster, up to a limit you choose.
+- **Five presets** (Default, Extra smooth, Responsive, Precise, Fast scroll) to change the feel in one click.
 - **Per-app profiles:** give any app its own step size, speed and easing, or switch smoothing off just for it.
 - **Tray menu shortcuts:** *Disable for <current app>* and *Disable for All Apps* in one click.
 - **Shift + wheel scrolls sideways**, even in apps that don't support it themselves (optional).
@@ -93,6 +95,7 @@ Windows SmartScreen may warn about an unrecognized app because release builds ar
 | **Settings** | Opens the settings window. |
 | **Disable for *app.exe*** | Turns smoothing off (or back on) for the app you were last using. |
 | **Disable for All Apps** | Master switch. The tray icon turns grey while SilkScroll is off. |
+| **Preset (all apps)** | Switches the default profile to one of the [presets](#presets). |
 | **Start with Windows** | Adds or removes SilkScroll from your sign-in startup apps. |
 | **Open Settings Folder** | Opens `%APPDATA%\SilkScroll`. |
 | **About SilkScroll** / **Exit** | Version info / quit SilkScroll. |
@@ -116,6 +119,23 @@ silkscroll.exe              start (or open settings if already running)
 silkscroll.exe --settings   open the settings window
 silkscroll.exe --quit       close every running SilkScroll and wait until it has exited
 ```
+
+## Presets
+
+Pick a ready-made scroll style from the **Preset** drop-down in the settings window (or from the tray menu for
+all apps). A preset fills in the five values below; you can still change any of them, and the drop-down then
+shows **Custom**. Presets work per app too: select an app in the list and choose a preset for it.
+
+| Preset | Step size | Animation time | Acceleration delta | Acceleration max | Tail to head | Feel |
+|---|---|---|---|---|---|---|
+| **Default** | 120 | 360 | 70 | 3 | 3 | Balanced smoothness for everyday use |
+| **Extra smooth** | 120 | 600 | 70 | 3 | 5 | A longer, silkier glide after every notch |
+| **Responsive** | 120 | 200 | 50 | 3 | 2 | Short and snappy; stops almost as soon as the wheel does |
+| **Precise** | 60 | 250 | 50 | 2 | 3 | Small steps for code, spreadsheets and design tools |
+| **Fast scroll** | 240 | 400 | 80 | 6 | 3 | Big steps and strong acceleration for long pages |
+
+Every preset uses the *Pulse* easing curve. Switches such as *Enable*, *Horizontal smoothing* and *Reverse wheel
+direction* are not changed by a preset.
 
 ## Settings reference
 
@@ -312,7 +332,8 @@ silkscroll/
 │   ├── engine.rs      low-level mouse hook, animator thread, SendInput
 │   ├── animator.rs    glide math and acceleration (pure Rust, unit tested)
 │   ├── easing.rs      easing curves (pure Rust, unit tested)
-│   ├── config.rs      settings model, JSON load/save, limits (unit tested)
+│   ├── config.rs      settings model, JSON load/save, limits, upgrades (unit tested)
+│   ├── presets.rs     the ready-made scroll styles (unit tested)
 │   ├── target.rs      window and process lookups: exe name, elevation, fullscreen
 │   ├── tray.rs        tray icon, tray menu, config reloads, hook watchdog
 │   ├── settings.rs    the settings window (native Win32 controls)

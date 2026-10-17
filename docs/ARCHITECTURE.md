@@ -179,6 +179,7 @@ the file's modification time every second, reloads its controls.
 | Change | Files |
 |---|---|
 | New per-app setting | `config.rs` (field, default, limits, test) → `engine.rs` (use it) → `settings.rs` (control + tooltip) → README settings table |
+| New or changed preset | `presets.rs` (entry + tests; the first preset must equal `Profile::default()`) → README presets table |
 | New pass-through rule | `engine.rs::intercept` (and `target.rs` if it needs window or process info) |
 | New easing curve | `easing.rs` (variant + tests) → mention in README |
 | Tray menu item | `tray.rs` (`build_menu`, `on_menu`) |

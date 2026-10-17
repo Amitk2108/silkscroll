@@ -17,7 +17,7 @@ use windows_sys::Win32::UI::Shell::{
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     AppendMenuW, CreatePopupMenu, CreateWindowExW, DefWindowProcW, DestroyMenu, DestroyWindow, DispatchMessageW,
     GetCursorPos, GetMessageW, GetSystemMetrics, HICON, HMENU, MB_ICONINFORMATION, MB_OK, MF_CHECKED, MF_GRAYED,
-    MF_SEPARATOR, MF_STRING, MSG, PBT_APMRESUMEAUTOMATIC, PostMessageW, PostQuitMessage, RegisterClassExW,
+    MF_POPUP, MF_SEPARATOR, MF_STRING, MSG, PBT_APMRESUMEAUTOMATIC, PostMessageW, PostQuitMessage, RegisterClassExW,
     RegisterWindowMessageW, SM_CXSMICON, SetForegroundWindow, SetMenuDefaultItem, SetTimer, TPM_BOTTOMALIGN,
     TPM_RETURNCMD, TPM_RIGHTBUTTON, TrackPopupMenu, TranslateMessage, WM_APP, WM_CLOSE, WM_CONTEXTMENU, WM_DESTROY,
     WM_LBUTTONUP, WM_NULL, WM_POWERBROADCAST, WM_RBUTTONUP, WM_TIMER, WM_WTSSESSION_CHANGE, WNDCLASSEXW, WS_OVERLAPPED,
@@ -26,6 +26,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
 use crate::config::{self, Config};
 use crate::engine::{self, Engine};
 use crate::instance::{TRAY_CLASS, WM_APP_QUIT, WM_APP_RELOAD};
+use crate::presets::{self, PRESETS};
 use crate::win::{hinstance, make_icon, message_box, shell_open, spawn_self, wide};
 use crate::{autostart, target};
 
@@ -41,6 +42,8 @@ const ID_AUTOSTART: usize = 13;
 const ID_FOLDER: usize = 14;
 const ID_ABOUT: usize = 15;
 const ID_EXIT: usize = 16;
+/// Preset `i` in the tray menu has id `ID_PRESET + i`.
+const ID_PRESET: usize = 100;
 
 static TASKBAR_CREATED: AtomicU32 = AtomicU32::new(0);
 
@@ -235,6 +238,22 @@ impl Tray {
             }
             add(MF_STRING | check(!self.cfg.enabled), ID_TOGGLE_ALL, "Disable for All Apps");
             add(MF_SEPARATOR, 0, "");
+
+            // Quick switch for the default profile's scroll style.
+            let preset_menu = CreatePopupMenu();
+            let current = presets::matching(&self.cfg.defaults);
+            for (i, preset) in PRESETS.iter().enumerate() {
+                AppendMenuW(
+                    preset_menu,
+                    MF_STRING | check(current == Some(i)),
+                    ID_PRESET + i,
+                    wide(preset.name).as_ptr(),
+                );
+            }
+            if current.is_none() {
+                AppendMenuW(preset_menu, MF_STRING | MF_GRAYED | MF_CHECKED, 0, wide("Custom").as_ptr());
+            }
+            add(MF_POPUP, preset_menu as usize, "Preset (all apps)");
             add(MF_STRING | check(self.cfg.start_with_windows), ID_AUTOSTART, "Start with Windows");
             add(MF_STRING, ID_FOLDER, "Open Settings Folder");
             add(MF_STRING, ID_ABOUT, "About SilkScroll");
@@ -264,6 +283,10 @@ impl Tray {
                 self.save();
             }
             ID_FOLDER => shell_open(&config::config_dir().to_string_lossy()),
+            _ if (ID_PRESET..ID_PRESET + PRESETS.len()).contains(&id) => {
+                PRESETS[id - ID_PRESET].apply(&mut self.cfg.defaults);
+                self.save();
+            }
             _ => {}
         }
     }

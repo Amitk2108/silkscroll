@@ -40,6 +40,7 @@ use crate::config::{
 };
 use crate::easing::Easing;
 use crate::instance::{self, SETTINGS_CLASS, WM_APP_RELOAD};
+use crate::presets::{self, PRESETS};
 use crate::target::{exe_name, running_apps};
 use crate::tray::about_text;
 use crate::win::{from_wide, hinstance, make_icon, message_box, scale, spawn_self, wide};
@@ -49,6 +50,7 @@ const IDC_LIST: u16 = 100;
 const IDC_ADD: u16 = 101;
 const IDC_REMOVE: u16 = 102;
 const IDC_RESET_ALL: u16 = 103;
+const IDC_PRESET: u16 = 105;
 const IDC_ENABLE: u16 = 110;
 const IDC_FIELD: u16 = 120; // + row
 const IDC_FIELD_RESET: u16 = 140; // + row
@@ -76,7 +78,7 @@ const SS_NOTIFY: u32 = 0x100;
 const SS_CENTERIMAGE: u32 = 0x200;
 
 const CLIENT_W: i32 = 600;
-const CLIENT_H: i32 = 466;
+const CLIENT_H: i32 = 502;
 const ROW_COUNT: usize = 5;
 const TAIL_ROW: usize = 4;
 
@@ -143,6 +145,8 @@ struct Controls {
     remove: HWND,
     reset_all: HWND,
     enable: HWND,
+    preset_label: HWND,
+    preset: HWND,
     labels: [HWND; ROW_COUNT],
     edits: [HWND; ROW_COUNT],
     resets: [HWND; ROW_COUNT],
@@ -310,6 +314,16 @@ fn label(parent: HWND, text: &str) -> HWND {
     create_child(parent, "STATIC", text, SS_LEFT | SS_CENTERIMAGE | SS_NOTIFY, 0, 0)
 }
 
+/// The preset drop-down: every preset plus "Custom" for hand-edited values.
+fn preset_box(parent: HWND) -> HWND {
+    let combo =
+        create_child(parent, "COMBOBOX", "", (CBS_DROPDOWNLIST as u32) | WS_VSCROLL | WS_TABSTOP, 0, IDC_PRESET);
+    for name in PRESETS.iter().map(|p| p.name).chain(["Custom"]) {
+        unsafe { SendMessageW(combo, CB_ADDSTRING, 0, wide(name).as_ptr() as LPARAM) };
+    }
+    combo
+}
+
 fn make_font(face: &str, points: i32, dpi: u32) -> HFONT {
     unsafe {
         CreateFontW(
@@ -408,6 +422,8 @@ impl State {
             remove: button(hwnd, "\u{2013}", IDC_REMOVE),
             reset_all: button(hwnd, "Reset All", IDC_RESET_ALL),
             enable: checkbox(hwnd, "Enable for all apps by default", IDC_ENABLE),
+            preset_label: label(hwnd, "Preset"),
+            preset: preset_box(hwnd),
             labels: std::array::from_fn(|i| label(hwnd, FIELDS[i].label)),
             edits: std::array::from_fn(|i| {
                 create_child(
@@ -500,6 +516,9 @@ impl State {
                 add(c.edits[i], field.tip);
                 add(c.resets[i], "Reset to default");
             }
+            let preset_tip = "Ready-made scroll styles. Pick one to fill in the values below;\nchange any value afterwards and it becomes Custom.";
+            add(c.preset_label, preset_tip);
+            add(c.preset, preset_tip);
             add(c.add, "Add settings for an app");
             add(c.remove, "Remove the settings for this app");
             add(c.reset_all, "Reset every value of this profile");
@@ -527,25 +546,28 @@ impl State {
     fn layout(&self) {
         let c = &self.c;
         let mut place: Vec<(HWND, i32, i32, i32, i32)> = vec![
-            (c.list, 14, 14, 214, 318),
-            (c.add, 14, 340, 36, 28),
-            (c.remove, 54, 340, 36, 28),
-            (c.reset_all, 148, 340, 80, 28),
+            (c.list, 14, 14, 214, 354),
+            (c.add, 14, 376, 36, 28),
+            (c.remove, 54, 376, 36, 28),
+            (c.reset_all, 148, 376, 80, 28),
             (c.enable, 244, 14, 342, 24),
-            (c.easing, 244, 236, 342, 24),
-            (c.horizontal, 244, 264, 342, 24),
-            (c.shift, 244, 292, 342, 24),
-            (c.reverse, 244, 320, 342, 24),
-            (c.separator, 14, 384, 572, 2),
-            (c.autostart, 14, 398, 190, 24),
-            (c.tray_icon, 214, 398, 190, 24),
-            (c.touchpad, 14, 428, 190, 24),
-            (c.fullscreen, 214, 428, 210, 24),
-            (c.help, 430, 412, 74, 28),
-            (c.about, 512, 412, 74, 28),
+            (c.preset_label, 244, 52, 186, 26),
+            // A drop-down list's height includes its open list.
+            (c.preset, 434, 52, 120, 220),
+            (c.easing, 244, 272, 342, 24),
+            (c.horizontal, 244, 300, 342, 24),
+            (c.shift, 244, 328, 342, 24),
+            (c.reverse, 244, 356, 342, 24),
+            (c.separator, 14, 420, 572, 2),
+            (c.autostart, 14, 434, 190, 24),
+            (c.tray_icon, 214, 434, 190, 24),
+            (c.touchpad, 14, 464, 190, 24),
+            (c.fullscreen, 214, 464, 210, 24),
+            (c.help, 430, 448, 74, 28),
+            (c.about, 512, 448, 74, 28),
         ];
         for i in 0..ROW_COUNT {
-            let y = 52 + i as i32 * 36;
+            let y = 88 + i as i32 * 36;
             place.push((c.labels[i], 244, y, 186, 26));
             place.push((c.edits[i], 434, y, 84, 26));
             place.push((c.resets[i], 524, y, 30, 26));
@@ -561,6 +583,8 @@ impl State {
                 SendMessageW(reset, WM_SETFONT, self.glyph_font as usize, 0);
             }
             SendMessageW(c.list, LB_SETITEMHEIGHT, 0, scale(26, self.dpi) as isize);
+            // Make the closed drop-down as tall as the edit boxes.
+            SendMessageW(c.preset, CB_SETITEMHEIGHT, usize::MAX, scale(20, self.dpi) as isize);
             // Push the text off the edit border a little.
             let margin = scale(4, self.dpi) as usize;
             for edit in c.edits {
@@ -641,6 +665,7 @@ impl State {
         for i in 0..ROW_COUNT {
             self.fill_field(i);
         }
+        self.sync_preset();
         set_checked(c.easing, p.easing != Easing::Linear);
         set_checked(c.horizontal, p.horizontal_smoothing);
         set_checked(c.shift, p.shift_for_horizontal);
@@ -659,6 +684,12 @@ impl State {
 
     fn fill_field(&self, i: usize) {
         set_text(self.c.edits[i], &format_value((FIELDS[i].get)(self.profile())));
+    }
+
+    /// Shows which preset the values match, or "Custom".
+    fn sync_preset(&self) {
+        let index = presets::matching(self.profile()).unwrap_or(PRESETS.len());
+        unsafe { SendMessageW(self.c.preset, CB_SETCURSEL, index, 0) };
     }
 
     fn schedule_save(&mut self) {
@@ -745,6 +776,7 @@ impl State {
                         let (lo, hi) = FIELDS[i].limits;
                         if value.is_finite() {
                             (FIELDS[i].set)(self.profile_mut(), value.clamp(lo, hi));
+                            self.sync_preset();
                             self.schedule_save();
                         }
                     }
@@ -757,7 +789,19 @@ impl State {
                 let value = (FIELDS[i].get)(&self.baseline());
                 (FIELDS[i].set)(self.profile_mut(), value);
                 self.fill_field(i);
+                self.sync_preset();
                 self.schedule_save();
+            }
+            IDC_PRESET if code == CBN_SELCHANGE => {
+                let index = unsafe { SendMessageW(c.preset, CB_GETCURSEL, 0, 0) };
+                // "Custom" is only a label for hand-edited values.
+                if let Some(preset) = usize::try_from(index).ok().and_then(|i| PRESETS.get(i)) {
+                    preset.apply(self.profile_mut());
+                    self.fill();
+                    self.schedule_save();
+                } else {
+                    self.sync_preset();
+                }
             }
             _ if code != BN_CLICKED => {}
             IDC_ENABLE => {
@@ -958,7 +1002,11 @@ fn on_command(hwnd: HWND, id: u16, code: u32) {
             }
         }
         IDC_HELP if code == BN_CLICKED => {
-            message_box(hwnd, HELP_TEXT, "SilkScroll Help", MB_OK | MB_ICONINFORMATION);
+            let mut help = format!("{HELP_TEXT}\n\nPresets:");
+            for preset in &PRESETS {
+                help.push_str(&format!("\n- {}: {}", preset.name, preset.description));
+            }
+            message_box(hwnd, &help, "SilkScroll Help", MB_OK | MB_ICONINFORMATION);
         }
         IDC_ABOUT if code == BN_CLICKED => {
             message_box(hwnd, &about_text(), "About SilkScroll", MB_OK | MB_ICONINFORMATION);
