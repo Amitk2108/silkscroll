@@ -6,6 +6,11 @@ All notable changes to SilkScroll are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Every change to the app pushed to `main` is now released automatically as a new patch version
+  (0.2.1, 0.2.2, ...), with the exe and its checksum attached. Minor versions are still listed here.
+
 ## [0.2.0] - 2026-10-17
 
 ### Changed

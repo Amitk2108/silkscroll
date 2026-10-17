@@ -99,15 +99,16 @@ By contributing, you agree that your contributions are licensed under the projec
 
 ## Releasing (maintainers)
 
-1. Update `version` in `Cargo.toml` and in `res/silkscroll.manifest`, and move *Unreleased* entries in
-   `CHANGELOG.md` under the new version.
-2. Commit, then tag and push:
+Releases are automatic. Every push to `main` that changes the app (`src/`, `res/`, `build.rs`, `Cargo.toml` or
+`Cargo.lock`) runs the *Release* workflow, which tests and builds `silkscroll.exe` on Windows and publishes it as
+a new GitHub release with its SHA-256 checksum and the list of commits since the previous release.
+Documentation-only changes don't create a release.
 
-   ```powershell
-   git tag v0.2.0
-   git push origin main --tags
-   ```
+Version numbers:
 
-3. The *Release* workflow tests and builds `silkscroll.exe` on Windows, then publishes a GitHub release for the
-   tag with the exe, its SHA-256 checksum and generated release notes. It appears on the Releases page within a
-   few minutes; edit the notes there if needed.
+- **Patch releases** are numbered by the workflow: if `Cargo.toml` says `0.2.0` and `v0.2.0` already exists, the
+  next releases are `v0.2.1`, `v0.2.2` and so on. The number is stamped into the exe during the build; it is not
+  committed back to `Cargo.toml`.
+- **Minor or major releases:** set the new version in `Cargo.toml` and `res/silkscroll.manifest`, describe the
+  release in `CHANGELOG.md`, and push. The workflow releases exactly that version.
+- **Forcing a release** without a code change: *Actions → Release → Run workflow*.

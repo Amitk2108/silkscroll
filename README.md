@@ -49,9 +49,13 @@ Free and open source (MIT). One small `.exe`, no installer, no runtime, no telem
 ### Download
 
 1. Download `silkscroll.exe` from the [latest release](https://github.com/Amitk2108/silkscroll/releases/latest).
+   Every update is published there automatically.
 2. Put it somewhere permanent, for example `C:\Users\<you>\Apps\SilkScroll\silkscroll.exe`.
 3. Double-click it. The settings window opens the first time, and a tray icon appears.
 4. SilkScroll starts with Windows by default. Untick **Start with Windows** if you'd rather start it yourself.
+
+**Updating:** right-click the tray icon and choose **Exit**, replace `silkscroll.exe` with the new download, and start
+it again. Your settings are kept.
 
 Windows SmartScreen may warn about an unrecognized app because release builds are not code-signed. Choose
 **More info → Run anyway**, or [build it yourself](#build-from-source).
