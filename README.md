@@ -46,16 +46,26 @@ Free and open source (MIT). One small `.exe`, no installer, no runtime, no telem
 
 ## Install
 
-### Download
+### Installer (recommended)
 
-1. Download `silkscroll.exe` from the [latest release](https://github.com/Amitk2108/silkscroll/releases/latest).
-   Every update is published there automatically.
-2. Put it somewhere permanent, for example `C:\Users\<you>\Apps\SilkScroll\silkscroll.exe`.
-3. Double-click it. The settings window opens the first time, and a tray icon appears.
-4. SilkScroll starts with Windows by default. Untick **Start with Windows** if you'd rather start it yourself.
+1. Download **[SilkScroll-Setup.exe](https://github.com/Amitk2108/silkscroll/releases/latest/download/SilkScroll-Setup.exe)**
+   from the [latest release](https://github.com/Amitk2108/silkscroll/releases/latest). Every update is published
+   there automatically.
+2. Run it: accept the license, choose where to install (default `%LOCALAPPDATA%\Programs\SilkScroll`, no
+   administrator rights needed), optionally add a desktop shortcut, and click **Install**.
+3. SilkScroll starts when setup finishes. The settings window opens the first time, and a tray icon appears.
+   SilkScroll starts with Windows by default; untick **Start with Windows** if you'd rather start it yourself.
 
-**Updating:** right-click the tray icon and choose **Exit**, replace `silkscroll.exe` with the new download, and start
-it again. Your settings are kept.
+**Updating:** download the new `SilkScroll-Setup.exe` and run it. It closes the running SilkScroll, replaces it in
+the same folder, keeps your settings and starts the new version. There is never more than one installed copy.
+
+### Portable
+
+Prefer no installation? Download
+**[silkscroll.exe](https://github.com/Amitk2108/silkscroll/releases/latest/download/silkscroll.exe)**, put it in a
+permanent folder and run it. Starting a newer `silkscroll.exe` automatically closes an older copy that is still
+running, and *Start with Windows* always points at the copy you started last. Delete old copies you no longer
+need.
 
 Windows SmartScreen may warn about an unrecognized app because release builds are not code-signed. Choose
 **More info → Run anyway**, or [build it yourself](#build-from-source).
@@ -104,7 +114,7 @@ Windows SmartScreen may warn about an unrecognized app because release builds ar
 ```text
 silkscroll.exe              start (or open settings if already running)
 silkscroll.exe --settings   open the settings window
-silkscroll.exe --quit       ask a running SilkScroll to exit
+silkscroll.exe --quit       close every running SilkScroll and wait until it has exited
 ```
 
 ## Settings reference
@@ -117,7 +127,7 @@ Per-profile settings (the defaults, and each app's own copy):
 | Step size [px] | `step_size_px` | 120 | 10 – 1000 | Distance of one notch. 100 is one normal notch in a browser, so the default scrolls a little further per notch. |
 | Animation time [ms] | `animation_time_ms` | 360 | 50 – 2000 | How long each notch keeps gliding. |
 | Acceleration delta [ms] | `acceleration_delta_ms` | 70 | 0 – 500 | Notches arriving closer together than this speed scrolling up. 0 turns acceleration off. |
-| Acceleration max [x] | `acceleration_max` | 7 | 1 – 20 | Upper limit for that speed-up, as a multiple of the step size. 1 turns it off. |
+| Acceleration max [x] | `acceleration_max` | 3 | 1 – 20 | Upper limit for that speed-up, as a multiple of the step size. 1 turns it off. |
 | Animation easing | `easing` | `pulse` | `pulse`, `ease_out`, `linear` | The shape of the glide. The checkbox switches between `pulse` and `linear`; `ease_out` can be set in the config file. |
 | Tail to head ratio [x] | `tail_to_head_ratio` | 3 | 1 – 20 | Pulse easing only: how much longer the slow-down lasts than the speed-up. |
 | Horizontal smoothing | `horizontal_smoothing` | on | | Also smooth tilt-wheel and horizontal-wheel scrolling. |
@@ -205,6 +215,9 @@ file is plain JSON and safe to edit by hand: missing keys use their defaults, ou
 and a running SilkScroll picks up the change within half a second. If the file can't be parsed at startup it is
 renamed to `config.bad.json` and the defaults are used.
 
+When a new version changes the default settings, your settings are upgraded automatically if you never changed
+the defaults; if you did, your values are kept. App profiles are never changed.
+
 ```json
 {
   "enabled": true,
@@ -217,7 +230,7 @@ renamed to `config.bad.json` and the defaults are used.
     "step_size_px": 120.0,
     "animation_time_ms": 360.0,
     "acceleration_delta_ms": 70.0,
-    "acceleration_max": 7.0,
+    "acceleration_max": 3.0,
     "easing": "pulse",
     "tail_to_head_ratio": 3.0,
     "horizontal_smoothing": true,
@@ -256,6 +269,13 @@ cargo build --release
 ```
 
 The app is written to `target\release\silkscroll.exe`. It is self-contained; copy it anywhere.
+
+To build the installer as well, install [Inno Setup](https://jrsoftware.org/isinfo.php) 6.3 or newer
+(`winget install JRSoftware.InnoSetup`) and run:
+
+```powershell
+./installer/build.ps1      # writes dist\SilkScroll-Setup.exe
+```
 
 ### Check your changes
 
@@ -304,7 +324,11 @@ silkscroll/
 │   └── wheel_probe.rs diagnostic window that counts wheel events
 ├── res/
 │   └── silkscroll.manifest  common controls v6, per-monitor DPI, asInvoker
-├── build.rs           renders the .ico and embeds icon + manifest into the exe
+├── installer/
+│   ├── silkscroll.iss   Inno Setup script: install, upgrade in place, uninstall
+│   ├── build.ps1        builds dist\SilkScroll-Setup.exe
+│   └── smoke-test.ps1   CI check: install, upgrade over a running copy, uninstall
+├── build.rs           renders the .ico and embeds icon, manifest and version info
 ├── docs/              architecture notes and screenshots
 └── .github/           CI, release workflow, issue and PR templates
 ```
@@ -339,9 +363,11 @@ unchanged so zoom and other shortcuts behave exactly as before.
 
 ## Uninstall
 
-1. Right-click the tray icon and untick **Start with Windows**, then choose **Exit**.
-2. Delete `silkscroll.exe`.
-3. Optionally delete your settings folder: `%APPDATA%\SilkScroll`.
+**Installed:** open *Settings → Apps → Installed apps*, find **SilkScroll** and choose **Uninstall**. The
+uninstaller closes SilkScroll, removes it from startup and asks whether to delete your settings too.
+
+**Portable:** right-click the tray icon and untick **Start with Windows**, choose **Exit**, then delete
+`silkscroll.exe` and, optionally, your settings folder `%APPDATA%\SilkScroll`.
 
 SilkScroll writes nothing else to your system.
 
