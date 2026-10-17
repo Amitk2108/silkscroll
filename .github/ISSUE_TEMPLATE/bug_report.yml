@@ -1,0 +1,44 @@
+name: Bug report
+description: Something doesn't work, or an app misbehaves with SilkScroll
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to report this. Please check the README's Troubleshooting section first.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: app
+    attributes:
+      label: App compatibility
+      description: If one app misbehaves, its exe name and version (for example `chrome.exe 129`).
+  - type: input
+    id: version
+    attributes:
+      label: SilkScroll version
+      description: Shown in the tray menu under "About SilkScroll".
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      description: Press Win+R, run `winver`.
+    validations:
+      required: true
+  - type: input
+    id: mouse
+    attributes:
+      label: Mouse or touchpad
+      description: Model, and whether its own software has smooth scrolling turned on.
+  - type: textarea
+    id: config
+    attributes:
+      label: config.json
+      description: If you changed settings, paste `%APPDATA%\SilkScroll\config.json`.
+      render: json

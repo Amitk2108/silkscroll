@@ -1,0 +1,22 @@
+# Changelog
+
+All notable changes to SilkScroll are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
+[Semantic Versioning](https://semver.org).
+
+## [Unreleased]
+
+## [0.1.0] - 2026-10-17
+
+### Added
+
+- Smooth scrolling engine: low-level mouse hook, per-frame animator, `SendInput` replay with exact distances.
+- Easing curves: Pulse (with tail-to-head ratio), Ease-out and Linear.
+- Acceleration for fast wheel spins, with configurable window and maximum.
+- Per-app profiles keyed by exe name, with app icons in the settings window.
+- Settings window with native Windows controls, per-value reset buttons, tooltips and live apply.
+- Tray icon with *Disable for app*, *Disable for All Apps*, *Start with Windows* and more.
+- Pass-through for Ctrl/Alt/Win + wheel, touchpads, hung windows, elevated apps and fullscreen games.
+- Shift + wheel horizontal scrolling and reverse direction options.
+- `--settings` and `--quit` command line switches.
+- `wheel_probe` example for measuring the smoothing end to end.
