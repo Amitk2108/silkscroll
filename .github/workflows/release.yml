@@ -32,7 +32,8 @@ jobs:
           New-Item -ItemType Directory -Force dist | Out-Null
           Copy-Item target/release/silkscroll.exe dist/silkscroll.exe
           $hash = (Get-FileHash dist/silkscroll.exe -Algorithm SHA256).Hash.ToLower()
-          "$hash  silkscroll.exe" | Out-File -Encoding ascii dist/silkscroll.exe.sha256
+          # LF line ending and no BOM, so `sha256sum -c` works everywhere.
+          [IO.File]::WriteAllText("$PWD/dist/silkscroll.exe.sha256", "$hash  silkscroll.exe`n")
 
       - name: Publish release
         uses: softprops/action-gh-release@v3
