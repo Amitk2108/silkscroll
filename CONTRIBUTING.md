@@ -99,10 +99,11 @@ By contributing, you agree that your contributions are licensed under the projec
 
 ## Releasing (maintainers)
 
-Releases are automatic. Every push to `main` that changes the app (`src/`, `res/`, `build.rs`, `Cargo.toml` or
-`Cargo.lock`) runs the *Release* workflow, which tests and builds `silkscroll.exe` on Windows and publishes it as
-a new GitHub release with its SHA-256 checksum and the list of commits since the previous release.
-Documentation-only changes don't create a release.
+Releases are automatic. Every push to `main` that changes the app (`src/`, `res/`, `installer/`, `build.rs`,
+`Cargo.toml` or `Cargo.lock`) runs the *Release* workflow. It tests and builds `silkscroll.exe` on Windows, builds
+`SilkScroll-Setup.exe`, checks the installer with a real install, an upgrade over a running copy and an uninstall
+(`installer/smoke-test.ps1`), and only then publishes a new GitHub release with both files, `SHA256SUMS.txt` and
+the list of commits since the previous release. Documentation-only changes don't create a release.
 
 Version numbers:
 
@@ -111,4 +112,9 @@ Version numbers:
   committed back to `Cargo.toml`.
 - **Minor or major releases:** set the new version in `Cargo.toml` and `res/silkscroll.manifest`, describe the
   release in `CHANGELOG.md`, and push. The workflow releases exactly that version.
+- **Changing a default setting:** update `Profile::default()`, add the old defaults to `PREVIOUS_DEFAULTS` and
+  bump `CONFIG_VERSION` in `src/config.rs`, so users who never customized them are moved to the new values.
+- **The installer:** `installer/silkscroll.iss`. Never change its `AppId`; it's how Windows finds the existing
+  installation to upgrade. Build it locally with `./installer/build.ps1` (needs Inno Setup 6.3+). Don't run
+  `smoke-test.ps1` on your own PC: it installs and uninstalls SilkScroll for your user.
 - **Forcing a release** without a code change: *Actions → Release → Run workflow*.

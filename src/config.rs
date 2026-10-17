@@ -44,7 +44,7 @@ impl Default for Profile {
             step_size_px: 120.0,
             animation_time_ms: 360.0,
             acceleration_delta_ms: 70.0,
-            acceleration_max: 7.0,
+            acceleration_max: 3.0,
             easing: Easing::Pulse,
             tail_to_head_ratio: 3.0,
             horizontal_smoothing: true,
@@ -78,9 +78,26 @@ impl Profile {
     }
 }
 
+/// Format version of the config file. Files written before this field existed
+/// read as 0. Bump it whenever the default profile changes, and add the old
+/// defaults to [`PREVIOUS_DEFAULTS`].
+pub const CONFIG_VERSION: u32 = 1;
+
+/// Default profiles shipped by earlier versions as `(step size, animation
+/// time, acceleration delta, acceleration max, tail-to-head ratio)`. A config
+/// whose defaults still equal one of these was never customized, so it is
+/// moved to the current defaults.
+const PREVIOUS_DEFAULTS: [(f64, f64, f64, f64, f64); 2] = [
+    (100.0, 400.0, 50.0, 3.0, 4.0), // 0.1
+    (120.0, 360.0, 70.0, 7.0, 3.0), // 0.2
+];
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(default)]
 pub struct Config {
+    /// See [`CONFIG_VERSION`]. Missing in old files, which then read as 0.
+    #[serde(default)]
+    pub config_version: u32,
     /// Master switch.
     pub enabled: bool,
     pub start_with_windows: bool,
@@ -102,6 +119,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
+            config_version: CONFIG_VERSION,
             enabled: true,
             // On for release builds only, so `cargo run` never registers a
             // development exe to start at sign-in.
@@ -153,13 +171,47 @@ impl Config {
         self
     }
 
+    /// Brings a config written by an older version up to date. Returns
+    /// whether anything changed, so the file can be saved again.
+    fn upgrade(&mut self) -> bool {
+        if self.config_version >= CONFIG_VERSION {
+            return false;
+        }
+        let d = &self.defaults;
+        let untouched = !d.shift_for_horizontal
+            && !d.reverse_direction
+            && d.horizontal_smoothing
+            && d.easing == Easing::Pulse
+            && PREVIOUS_DEFAULTS.contains(&(
+                d.step_size_px,
+                d.animation_time_ms,
+                d.acceleration_delta_ms,
+                d.acceleration_max,
+                d.tail_to_head_ratio,
+            ));
+        if untouched {
+            self.defaults = Profile { enabled: self.defaults.enabled, ..Profile::default() };
+        }
+        self.config_version = CONFIG_VERSION;
+        true
+    }
+
+    #[cfg(test)]
     pub fn from_json(text: &str) -> serde_json::Result<Config> {
-        serde_json::from_str::<Config>(text).map(Config::sanitized)
+        parse(text).map(|(cfg, _)| cfg)
     }
 
     pub fn to_json(&self) -> String {
         serde_json::to_string_pretty(self).expect("config always serializes")
     }
+}
+
+/// Parses, clamps and upgrades a config. The flag says whether an upgrade
+/// happened.
+fn parse(text: &str) -> serde_json::Result<(Config, bool)> {
+    let mut cfg = serde_json::from_str::<Config>(text)?.sanitized();
+    let upgraded = cfg.upgrade();
+    Ok((cfg, upgraded))
 }
 
 pub fn config_dir() -> PathBuf {
@@ -182,20 +234,30 @@ pub enum ReadError {
 /// Reloads use this: if the user is in the middle of saving the file from an
 /// editor, the running settings simply stay as they are until the next change.
 pub fn read() -> Result<Config, ReadError> {
+    read_file().map(|(cfg, _)| cfg)
+}
+
+fn read_file() -> Result<(Config, bool), ReadError> {
     match fs::read_to_string(config_path()) {
-        Ok(text) => Config::from_json(&text).map_err(|_| ReadError::Invalid),
+        Ok(text) => parse(&text).map_err(|_| ReadError::Invalid),
         Err(e) if e.kind() == io::ErrorKind::NotFound => Err(ReadError::Missing),
         Err(_) => Err(ReadError::Invalid),
     }
 }
 
-/// Loads the config at startup, creating it with defaults on first run. A
-/// file that still can't be parsed after a few tries is moved aside to
-/// `config.bad.json` instead of being lost.
+/// Loads the config at startup, creating it with defaults on first run and
+/// saving it back if it was upgraded from an older version. A file that still
+/// can't be parsed after a few tries is moved aside to `config.bad.json`
+/// instead of being lost.
 pub fn load() -> Config {
     for attempt in 0..3 {
-        match read() {
-            Ok(cfg) => return cfg,
+        match read_file() {
+            Ok((cfg, upgraded)) => {
+                if upgraded {
+                    let _ = save(&cfg);
+                }
+                return cfg;
+            }
             Err(ReadError::Missing) => break,
             Err(ReadError::Invalid) if attempt < 2 => std::thread::sleep(std::time::Duration::from_millis(150)),
             Err(ReadError::Invalid) => {
@@ -234,7 +296,7 @@ mod tests {
         assert_eq!(p.step_size_px, 120.0);
         assert_eq!(p.animation_time_ms, 360.0);
         assert_eq!(p.acceleration_delta_ms, 70.0);
-        assert_eq!(p.acceleration_max, 7.0);
+        assert_eq!(p.acceleration_max, 3.0);
         assert_eq!(p.tail_to_head_ratio, 3.0);
         assert_eq!(p.easing, Easing::Pulse);
         assert!(!p.shift_for_horizontal);
@@ -246,6 +308,54 @@ mod tests {
         // Release builds start with Windows by default; debug builds don't,
         // so `cargo run` never registers a target\debug exe at sign-in.
         assert_eq!(cfg.start_with_windows, cfg!(not(debug_assertions)));
+    }
+
+    /// A config saved by an older version, with its untouched defaults.
+    fn old_config(step: f64, time: f64, delta: f64, max: f64, ratio: f64) -> String {
+        format!(
+            r#"{{ "defaults": {{ "enabled": true, "step_size_px": {step}, "animation_time_ms": {time},
+                "acceleration_delta_ms": {delta}, "acceleration_max": {max}, "easing": "pulse",
+                "tail_to_head_ratio": {ratio}, "horizontal_smoothing": true,
+                "shift_for_horizontal": false, "reverse_direction": false }},
+                "apps": {{ "code.exe": {{ "step_size_px": 80 }} }} }}"#
+        )
+    }
+
+    #[test]
+    fn untouched_defaults_from_older_versions_are_upgraded() {
+        for (version, text) in
+            [("0.1", old_config(100.0, 400.0, 50.0, 3.0, 4.0)), ("0.2", old_config(120.0, 360.0, 70.0, 7.0, 3.0))]
+        {
+            let (cfg, upgraded) = parse(&text).unwrap();
+            assert!(upgraded, "{version}");
+            assert_eq!(cfg.defaults, Profile::default(), "{version}");
+            assert_eq!(cfg.config_version, CONFIG_VERSION);
+            // App profiles are the user's own choices and stay as they are.
+            assert_eq!(cfg.profile_for("code.exe").step_size_px, 80.0);
+        }
+    }
+
+    #[test]
+    fn customized_defaults_are_kept() {
+        let (cfg, upgraded) = parse(&old_config(150.0, 400.0, 50.0, 3.0, 4.0)).unwrap();
+        assert!(upgraded, "the file is still marked as upgraded");
+        assert_eq!(cfg.defaults.step_size_px, 150.0);
+        assert_eq!(cfg.defaults.animation_time_ms, 400.0);
+    }
+
+    #[test]
+    fn current_configs_are_never_rewritten() {
+        // Someone on the current version who picks the old values on purpose
+        // keeps them.
+        let text = old_config(100.0, 400.0, 50.0, 3.0, 4.0).replacen(
+            '{',
+            &format!("{{ \"config_version\": {CONFIG_VERSION},"),
+            1,
+        );
+        let (cfg, upgraded) = parse(&text).unwrap();
+        assert!(!upgraded);
+        assert_eq!(cfg.defaults.step_size_px, 100.0);
+        assert_eq!(Config::default().config_version, CONFIG_VERSION);
     }
 
     #[test]

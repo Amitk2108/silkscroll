@@ -6,10 +6,27 @@ All notable changes to SilkScroll are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-17
+
+### Added
+
+- **Installer** (`SilkScroll-Setup.exe`): per-user install with a choice of folder, Start menu and optional
+  desktop shortcut, *Settings > Apps* uninstall entry, and launch on finish. Running a newer setup closes the
+  running SilkScroll and upgrades it in place, keeping your settings. Uninstalling also removes the startup entry
+  and offers to delete your settings.
+- Starting a different copy of SilkScroll (for example a newer download) now closes the older copy that is running
+  and takes over, instead of leaving the old version active.
+- Version details (product name, version, copyright) in the exe's *Properties → Details*.
+- Every change to the app pushed to `main` is released automatically as a new patch version, with the installer,
+  the portable exe and `SHA256SUMS.txt` attached.
+
 ### Changed
 
-- Every change to the app pushed to `main` is now released automatically as a new patch version
-  (0.2.1, 0.2.2, ...), with the exe and its checksum attached. Minor versions are still listed here.
+- Default acceleration max is now 3x (defaults: step size 120, animation time 360 ms, acceleration delta 70 ms,
+  acceleration max 3x, tail-to-head ratio 3).
+- Settings saved by an older version whose defaults were never changed are upgraded to the new defaults
+  automatically. Customized values and app profiles are kept.
+- `--quit` now also closes the settings window and waits until SilkScroll has exited.
 
 ## [0.2.0] - 2026-10-17
 

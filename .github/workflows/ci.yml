@@ -37,9 +37,25 @@ jobs:
       - name: Build release
         run: cargo build --release
 
-      - name: Upload exe
+      - name: Install Inno Setup
+        shell: pwsh
+        run: if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+
+      - name: Build installer
+        shell: pwsh
+        run: ./installer/build.ps1 -OutDir dist
+
+      - name: Test installer (install, upgrade over a running copy, uninstall)
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path Cargo.toml -Pattern '^version = "(.+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
+          ./installer/smoke-test.ps1 -Setup dist/SilkScroll-Setup.exe -Version $version
+
+      - name: Upload build
         uses: actions/upload-artifact@v7
         with:
           name: silkscroll-${{ github.sha }}
-          path: target/release/silkscroll.exe
+          path: |
+            target/release/silkscroll.exe
+            dist/SilkScroll-Setup.exe
           if-no-files-found: error

@@ -22,9 +22,14 @@ shorter overview, see [How it works](../README.md#how-it-works) in the README.
 | Engine (no arguments) | the user, or the Run key at sign-in | `Local\SilkScroll.Engine` | `SilkScroll.Tray` (hidden) |
 | Settings (`--settings`) | the tray, or a second launch of the engine | `Local\SilkScroll.Settings` | `SilkScroll.Settings` |
 
-- Launching the engine while it is already running opens the settings window instead (`main.rs`).
+- Launching the engine while the **same exe** is already running opens the settings window instead (`main.rs`).
+- Launching the engine while a **different exe** is running (an older version in another folder, or a download
+  saved under another name) replaces it: the new process closes the old engine and settings window, waits for
+  them to exit, then takes over (`instance::engine_is_other_copy`, `instance::quit_all`).
 - Opening the settings while the engine isn't running starts the engine (`settings::run`).
-- `--quit` posts `WM_APP_QUIT` to the hidden tray window.
+- `--quit` posts `WM_APP_QUIT` to the hidden tray window, closes the settings window and waits until both have
+  exited. The installer does the same from its own code (`StopSilkScroll` in `installer/silkscroll.iss`) before it
+  replaces or removes the exe.
 
 The settings UI runs as a separate process so it can never stall the hook thread, and a crash in the UI can't
 take scrolling down with it.
@@ -132,6 +137,10 @@ All curves map `t` in `[0, 1]` to `[0, 1]`, start at 0, end at exactly 1 and nev
   halfway through saving the file from an editor, the running settings stay until the next valid save.
 - `load()` is used at startup: it retries an invalid file briefly, then moves it to `config.bad.json` and starts
   from defaults.
+- **Upgrades.** `config_version` records the file format. A file from an older version (missing or lower
+  `config_version`) whose default profile still equals one of the `PREVIOUS_DEFAULTS` was never customized, so
+  its defaults are replaced with the current ones. Customized defaults and app profiles are left alone. `load()`
+  saves the upgraded file once.
 
 Flow of a change made in the settings window:
 

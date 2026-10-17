@@ -21,4 +21,6 @@ in the release notes unless you prefer otherwise.
   checks whether Ctrl, Alt, Shift or Win is held. It does not record input and never reads keystrokes.
 - It never opens a network connection.
 - It runs with your normal user rights (`asInvoker`) and writes only to `%APPDATA%\SilkScroll` and, while *Start
-  with Windows* is on (the default), one value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
+  with Windows* is on (the default), one value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`. The
+  installer also installs into `%LOCALAPPDATA%\Programs\SilkScroll` (or the folder you choose) and adds a Start
+  menu shortcut and an uninstall entry.
