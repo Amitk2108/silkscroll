@@ -117,8 +117,9 @@ pub fn units_for(delta: i32, profile: &Profile) -> f64 {
 mod tests {
     use super::*;
 
+    /// One plain notch per wheel event (100 px = 120 units), no acceleration.
     fn profile() -> Profile {
-        Profile { acceleration_delta_ms: 0.0, ..Profile::default() }
+        Profile { step_size_px: 100.0, acceleration_delta_ms: 0.0, ..Profile::default() }
     }
 
     /// Runs the animator at `fps` until it goes idle, returning every frame.

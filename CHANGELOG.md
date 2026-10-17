@@ -6,6 +6,15 @@ All notable changes to SilkScroll are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-17
+
+### Changed
+
+- New default feel: step size 120, animation time 360 ms, acceleration delta 70 ms, acceleration max 7x and
+  tail-to-head ratio 3. Existing settings are kept; click **Reset All** on *Default (All Applications)* to switch
+  to the new defaults.
+- *Start with Windows* is now on by default (release builds only).
+
 ## [0.1.0] - 2026-10-17
 
 ### Added

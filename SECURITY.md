@@ -20,5 +20,5 @@ in the release notes unless you prefer otherwise.
 - It acts on mouse wheel events only; every other mouse event passes straight through. While you scroll it
   checks whether Ctrl, Alt, Shift or Win is held. It does not record input and never reads keystrokes.
 - It never opens a network connection.
-- It runs with your normal user rights (`asInvoker`) and writes only to `%APPDATA%\SilkScroll` and, if you enable
-  *Start with Windows*, one value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
+- It runs with your normal user rights (`asInvoker`) and writes only to `%APPDATA%\SilkScroll` and, while *Start
+  with Windows* is on (the default), one value under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.

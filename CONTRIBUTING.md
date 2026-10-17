@@ -76,7 +76,8 @@ cargo run -- --quit                         # stop a running engine
 
 Unit tests cover the math; please also run through what your change touches:
 
-- [ ] Wheel probe: `events` > 1 and `total_delta` is exactly `120 x notches` with SilkScroll running.
+- [ ] Wheel probe: `events` > 1 and `total_delta` is exactly `notches x 120 x step size / 100` with SilkScroll
+      running (144 per notch at the default step size of 120).
 - [ ] Scroll in a browser, VS Code or another editor, and File Explorer.
 - [ ] Ctrl + wheel still zooms in a browser.
 - [ ] Settings window: add an app with **+**, change a value, remove it; changes apply without restarting.

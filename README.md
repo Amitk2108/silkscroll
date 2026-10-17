@@ -51,7 +51,7 @@ Free and open source (MIT). One small `.exe`, no installer, no runtime, no telem
 1. Download `silkscroll.exe` from the [latest release](https://github.com/Amitk2108/silkscroll/releases/latest).
 2. Put it somewhere permanent, for example `C:\Users\<you>\Apps\SilkScroll\silkscroll.exe`.
 3. Double-click it. The settings window opens the first time, and a tray icon appears.
-4. Tick **Start with Windows** if you want it to run at sign-in.
+4. SilkScroll starts with Windows by default. Untick **Start with Windows** if you'd rather start it yourself.
 
 Windows SmartScreen may warn about an unrecognized app because release builds are not code-signed. Choose
 **More info → Run anyway**, or [build it yourself](#build-from-source).
@@ -110,12 +110,12 @@ Per-profile settings (the defaults, and each app's own copy):
 | Setting | Config key | Default | Range | Meaning |
 |---|---|---|---|---|
 | Enable | `enabled` | on | | Smooth scrolling for this profile. |
-| Step size [px] | `step_size_px` | 100 | 10 – 1000 | Distance of one notch. 100 is one normal notch in a browser, so it keeps your usual speed. |
-| Animation time [ms] | `animation_time_ms` | 400 | 50 – 2000 | How long each notch keeps gliding. |
-| Acceleration delta [ms] | `acceleration_delta_ms` | 50 | 0 – 500 | Notches arriving closer together than this speed scrolling up. 0 turns acceleration off. |
-| Acceleration max [x] | `acceleration_max` | 3 | 1 – 20 | Upper limit for that speed-up, as a multiple of the step size. 1 turns it off. |
+| Step size [px] | `step_size_px` | 120 | 10 – 1000 | Distance of one notch. 100 is one normal notch in a browser, so the default scrolls a little further per notch. |
+| Animation time [ms] | `animation_time_ms` | 360 | 50 – 2000 | How long each notch keeps gliding. |
+| Acceleration delta [ms] | `acceleration_delta_ms` | 70 | 0 – 500 | Notches arriving closer together than this speed scrolling up. 0 turns acceleration off. |
+| Acceleration max [x] | `acceleration_max` | 7 | 1 – 20 | Upper limit for that speed-up, as a multiple of the step size. 1 turns it off. |
 | Animation easing | `easing` | `pulse` | `pulse`, `ease_out`, `linear` | The shape of the glide. The checkbox switches between `pulse` and `linear`; `ease_out` can be set in the config file. |
-| Tail to head ratio [x] | `tail_to_head_ratio` | 4 | 1 – 20 | Pulse easing only: how much longer the slow-down lasts than the speed-up. |
+| Tail to head ratio [x] | `tail_to_head_ratio` | 3 | 1 – 20 | Pulse easing only: how much longer the slow-down lasts than the speed-up. |
 | Horizontal smoothing | `horizontal_smoothing` | on | | Also smooth tilt-wheel and horizontal-wheel scrolling. |
 | Shift + wheel scrolls horizontally | `shift_for_horizontal` | off | | Turn Shift + wheel into sideways scrolling. |
 | Reverse wheel direction | `reverse_direction` | off | | Up becomes down, left becomes right. |
@@ -125,7 +125,7 @@ Global settings:
 | Setting | Config key | Default | Meaning |
 |---|---|---|---|
 | Disable for All Apps (tray) | `enabled` | on | Master switch. |
-| Start with Windows | `start_with_windows` | off | Run at sign-in (adds a value under `HKCU\...\CurrentVersion\Run`). |
+| Start with Windows | `start_with_windows` | on | Run at sign-in (adds a value under `HKCU\...\CurrentVersion\Run`). Off by default in debug builds. |
 | Show tray icon | `show_tray_icon` | on | When hidden, run `silkscroll.exe` again to reach the settings. |
 | Ignore touchpad | `ignore_touchpad` | on | Leave touchpads and free-spinning high-resolution wheels alone; they already scroll smoothly. |
 | Skip fullscreen apps (games) | `skip_fullscreen_apps` | on | Don't smooth inside borderless fullscreen windows, which are mostly games. |
@@ -210,12 +210,12 @@ renamed to `config.bad.json` and the defaults are used.
   "skip_fullscreen_apps": true,
   "defaults": {
     "enabled": true,
-    "step_size_px": 100.0,
-    "animation_time_ms": 400.0,
-    "acceleration_delta_ms": 50.0,
-    "acceleration_max": 3.0,
+    "step_size_px": 120.0,
+    "animation_time_ms": 360.0,
+    "acceleration_delta_ms": 70.0,
+    "acceleration_max": 7.0,
     "easing": "pulse",
-    "tail_to_head_ratio": 4.0,
+    "tail_to_head_ratio": 3.0,
     "horizontal_smoothing": true,
     "shift_for_horizontal": false,
     "reverse_direction": false
@@ -275,7 +275,7 @@ cargo run --release --example wheel_probe -- --inject 1 --seconds 2
 | SilkScroll | Typical output |
 |---|---|
 | not running | `events=1 total_delta=120` (one plain notch) |
-| running, default settings | `events=45 total_delta=120 span_ms=390` (the same notch as a 0.4 s glide) |
+| running, default settings | dozens of small events adding up to `total_delta=144` over about 0.36 s (step size 120 is 1.2 plain notches) |
 
 Without `--inject` the probe just listens for 10 seconds while you scroll over it yourself.
 

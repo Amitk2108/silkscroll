@@ -20,7 +20,7 @@ use crate::easing::Easing;
 pub struct Profile {
     pub enabled: bool,
     /// Distance of one wheel notch. 100 px is the distance of a plain notch
-    /// in a browser, so 100 keeps your normal speed and only adds smoothness.
+    /// in a browser; the default of 120 scrolls a little further.
     pub step_size_px: f64,
     /// How long one notch keeps moving.
     pub animation_time_ms: f64,
@@ -41,12 +41,12 @@ impl Default for Profile {
     fn default() -> Self {
         Profile {
             enabled: true,
-            step_size_px: 100.0,
-            animation_time_ms: 400.0,
-            acceleration_delta_ms: 50.0,
-            acceleration_max: 3.0,
+            step_size_px: 120.0,
+            animation_time_ms: 360.0,
+            acceleration_delta_ms: 70.0,
+            acceleration_max: 7.0,
             easing: Easing::Pulse,
-            tail_to_head_ratio: 4.0,
+            tail_to_head_ratio: 3.0,
             horizontal_smoothing: true,
             shift_for_horizontal: false,
             reverse_direction: false,
@@ -103,7 +103,9 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             enabled: true,
-            start_with_windows: false,
+            // On for release builds only, so `cargo run` never registers a
+            // development exe to start at sign-in.
+            start_with_windows: cfg!(not(debug_assertions)),
             show_tray_icon: true,
             ignore_touchpad: true,
             skip_fullscreen_apps: true,
@@ -224,6 +226,27 @@ pub fn modified_time() -> Option<SystemTime> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn shipped_defaults() {
+        let p = Profile::default();
+        assert!(p.enabled);
+        assert_eq!(p.step_size_px, 120.0);
+        assert_eq!(p.animation_time_ms, 360.0);
+        assert_eq!(p.acceleration_delta_ms, 70.0);
+        assert_eq!(p.acceleration_max, 7.0);
+        assert_eq!(p.tail_to_head_ratio, 3.0);
+        assert_eq!(p.easing, Easing::Pulse);
+        assert!(!p.shift_for_horizontal);
+        assert!(p.horizontal_smoothing);
+        assert!(!p.reverse_direction);
+
+        let cfg = Config::default();
+        assert!(cfg.enabled);
+        // Release builds start with Windows by default; debug builds don't,
+        // so `cargo run` never registers a target\debug exe at sign-in.
+        assert_eq!(cfg.start_with_windows, cfg!(not(debug_assertions)));
+    }
 
     #[test]
     fn missing_fields_fall_back_to_defaults() {
