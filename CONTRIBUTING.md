@@ -107,5 +107,6 @@ By contributing, you agree that your contributions are licensed under the projec
    git push origin main --tags
    ```
 
-3. The *Release* workflow builds `silkscroll.exe` on Windows, attaches it with its SHA-256 checksum to a GitHub
-   release for the tag, and generates release notes. Review the draft and publish it.
+3. The *Release* workflow tests and builds `silkscroll.exe` on Windows, then publishes a GitHub release for the
+   tag with the exe, its SHA-256 checksum and generated release notes. It appears on the Releases page within a
+   few minutes; edit the notes there if needed.
